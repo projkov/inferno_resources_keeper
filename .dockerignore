@@ -1,0 +1,11 @@
+.git
+.env
+.bundle/
+vendor/bundle/
+coverage/
+spec/
+.rspec
+.rubocop.yml
+.gitignore
+*.md
+.DS_Store

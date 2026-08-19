@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: resource_api_dev
+      POSTGRES_USER: resource_api
+      POSTGRES_PASSWORD: resource_api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resource_api -d resource_api_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://resource_api:resource_api@db:5432/resource_api_dev
+      EXPIRATION_MS: "604800000"
+    ports:
+      - "4567:4567"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
