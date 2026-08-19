@@ -17,6 +17,7 @@ class ResourceApi < Sinatra::Base
 
   configure do
     set :show_exceptions, false
+    set :host_authorization, { permitted_hosts: [] }
   end
 
   def self.expiration_ms
