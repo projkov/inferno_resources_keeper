@@ -6,7 +6,9 @@ require "sequel"
 require "securerandom"
 require "dotenv/load"
 
-DB = Sequel.connect(ENV.fetch("DATABASE_URL"))
+# simplecov:disable
+DB = Sequel.connect(ENV.fetch("DATABASE_URL")) unless defined?(DB)
+# simplecov:enable
 DB.extension :pg_json
 require_relative "models/resource"
 
