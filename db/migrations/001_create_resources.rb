@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Sequel.migration do
   change do
     create_table(:resources) do
@@ -10,7 +12,7 @@ Sequel.migration do
       DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
       DateTime :expired_at, null: false
 
-      index [:session_id, :resource_type, :resource_id], unique: true, name: :idx_resource_lookup
+      index %i[session_id resource_type resource_id], unique: true, name: :idx_resource_lookup
       index :expired_at
     end
   end

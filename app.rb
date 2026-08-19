@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "sinatra/base"
 require "sinatra/json"
 require "sequel"
@@ -24,7 +26,7 @@ class ResourceApi < Sinatra::Base
 
     DB[:resources]
       .insert_conflict(
-        target: [:session_id, :resource_type, :resource_id],
+        target: %i[session_id resource_type resource_id],
         update: {
           resource: Sequel[:excluded][:resource],
           expired_at: Sequel[:excluded][:expired_at],
@@ -74,9 +76,9 @@ class ResourceApi < Sinatra::Base
     now = Time.now
 
     updated_count = DB[:resources]
-      .where(session_id: params[:session_id])
-      .where { expired_at > now }
-      .update(expired_at: now, updated_at: now)
+                    .where(session_id: params[:session_id])
+                    .where { expired_at > now }
+                    .update(expired_at: now, updated_at: now)
 
     status 200
     json(sessionId: params[:session_id], expiredCount: updated_count)

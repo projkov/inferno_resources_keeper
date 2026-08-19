@@ -1,0 +1,17 @@
+require:
+  - rubocop
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.3
+  SuggestExtensions: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "app.rb"
