@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "json"
+require "time"
 
 RSpec.describe ResourceApi do
   let(:payload) do
@@ -9,8 +10,7 @@ RSpec.describe ResourceApi do
       sessionId: "s1",
       resourceType: "patient",
       resourceId: "p1",
-      resource: { name: "Alice" },
-      expiredAt: (Time.now + 3600).iso8601
+      resource: { name: "Alice" }
     }
   end
 
@@ -20,6 +20,14 @@ RSpec.describe ResourceApi do
 
   def post_json(body)
     post "/resources", body.to_json, "CONTENT_TYPE" => "application/json"
+  end
+
+  def with_env(vars)
+    original = vars.to_h { |key, _| [key, ENV.fetch(key, nil)] }
+    vars.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    original.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
   end
 
   describe "POST /resources" do
@@ -45,6 +53,24 @@ RSpec.describe ResourceApi do
       expect(last_response.status).to eq(422)
       expect(json_body["error"]).to eq("Missing field: resourceType")
     end
+
+    it "sets expiredAt to now plus the default 7-day expiration" do
+      with_env("EXPIRATION_MS" => nil) do
+        post_json(payload)
+      end
+
+      expiration = Time.parse(json_body["expiredAt"]) - Time.parse(json_body["createdAt"])
+      expect(expiration).to be_within(5).of(7 * 24 * 60 * 60)
+    end
+
+    it "honors a custom EXPIRATION_MS from the environment" do
+      with_env("EXPIRATION_MS" => "60000") do
+        post_json(payload)
+      end
+
+      expiration = Time.parse(json_body["expiredAt"]) - Time.parse(json_body["createdAt"])
+      expect(expiration).to be_within(2).of(60)
+    end
   end
 
   describe "GET /:session_id/:resource_type/:resource_id" do
@@ -64,7 +90,9 @@ RSpec.describe ResourceApi do
     end
 
     it "returns 404 when the resource is expired" do
-      post_json(payload.merge(expiredAt: (Time.now - 3600).iso8601))
+      with_env("EXPIRATION_MS" => "-3600000") do
+        post_json(payload)
+      end
 
       get "/s1/patient/p1"
 

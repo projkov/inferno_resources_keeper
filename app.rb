@@ -13,8 +13,14 @@ DB.extension :pg_json
 require_relative "models/resource"
 
 class ResourceApi < Sinatra::Base
+  DEFAULT_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000
+
   configure do
     set :show_exceptions, false
+  end
+
+  def self.expiration_ms
+    Integer(ENV.fetch("EXPIRATION_MS", DEFAULT_EXPIRATION_MS))
   end
 
   before do
@@ -25,6 +31,7 @@ class ResourceApi < Sinatra::Base
   post "/resources" do
     payload = JSON.parse(request.body.read)
     now = Time.now
+    expired_at = now + (self.class.expiration_ms / 1000.0)
 
     DB[:resources]
       .insert_conflict(
@@ -43,7 +50,7 @@ class ResourceApi < Sinatra::Base
         resource: Sequel.pg_jsonb(payload.fetch("resource")),
         created_at: now,
         updated_at: now,
-        expired_at: payload.fetch("expiredAt")
+        expired_at: expired_at
       )
 
     record = Resource.first(
